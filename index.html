@@ -29,7 +29,6 @@
     .footer-note { margin:60px 0 40px; font-size:12px; color:#8d6e63; }
     @media (max-width:760px){ #video_feed_element{ width:95%; height:auto; } .stat-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); } }
   </style>
-  <script> window.API_BASE = 'https://5ccbd8c723f0.ngrok-free.app'; </script>
 </head>
 <body>
   <img src="{{ url_for('static', filename='pineapple-cartoon-character-free-vector.jpg') }}" alt="pineapple mascot" class="pine-deco">
@@ -49,7 +48,9 @@
   <div id="overview_result" class="panel"></div>
   <div id="details_result" class="panel" style="margin-top:28px;"></div>
   <div class="footer-note">Prototype realtime pineapple quality inspection dashboard</div>
+  <script> window.API_BASE = 'https://5ccbd8c723f0.ngrok-free.app'; </script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
   </body>
 
 </html>
+
