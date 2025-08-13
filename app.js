@@ -100,27 +100,38 @@ if(userCam){
           const json = await res.json();
           renderSummary(json);
           // draw boxes if overlay present
-          if(overlay && userCam.videoWidth){
-            overlay.width = userCam.videoWidth;
-            overlay.height = userCam.videoHeight;
+          if(overlay && sendFrame._c){
+            // Display size (what user sees)
+            const dispW = userCam.clientWidth || userCam.videoWidth || sendFrame._c.width;
+            const dispH = userCam.clientHeight || userCam.videoHeight || sendFrame._c.height;
+            overlay.width = dispW;
+            overlay.height = dispH;
+            // Inference size (what we sent to backend)
+            const infW = sendFrame._c.width;
+            const infH = sendFrame._c.height;
+            const sx = dispW / infW;
+            const sy = dispH / infH;
             const octx = overlay.getContext('2d');
-            octx.clearRect(0,0,overlay.width,overlay.height);
+            octx.clearRect(0,0,dispW,dispH);
             const boxes = json.raw || [];
             boxes.forEach(b=>{
-              const [x1,y1,x2,y2] = b.box;
+              let [x1,y1,x2,y2] = b.box;
+              x1*=sx; y1*=sy; x2*=sx; y2*=sy;
               const w = x2 - x1; const h = y2 - y1;
               octx.strokeStyle = '#ffb300';
               octx.lineWidth = 2;
               octx.strokeRect(x1,y1,w,h);
               const label = `${b.class} ${b.confidence}`;
-              octx.fillStyle = 'rgba(255,179,0,0.85)';
-              const pad = 4;
               octx.font = '14px sans-serif';
-              const tw = octx.measureText(label).width;
+              const pad = 4;
+              const metrics = octx.measureText(label);
+              const tw = metrics.width;
               const th = 16;
-              octx.fillRect(x1, Math.max(0,y1-th-4), tw+pad*2, th+4);
+              octx.fillStyle = 'rgba(255,179,0,0.85)';
+              const boxY = Math.max(0,y1-th-4);
+              octx.fillRect(x1, boxY, tw+pad*2, th+4);
               octx.fillStyle = '#000';
-              octx.fillText(label, x1+pad, Math.max(10,y1-6));
+              octx.fillText(label, x1+pad, boxY+th);
             });
           }
           if(statusEl) statusEl.textContent = 'Updated '+new Date().toLocaleTimeString();
