@@ -17,7 +17,9 @@
     .two-col { display:flex; align-items:stretch; justify-content:center; gap:34px; }
     .col-left, .col-right { display:flex; flex-direction:column; align-items:stretch; }
     .col-left { flex:0 0 auto; }
-    .video-shell { position:relative; width:640px; max-width:100%; aspect-ratio:4/3; }
+  .video-shell { position:relative; width:640px; max-width:100%; aspect-ratio:4/3; }
+  .cam-btn { position:absolute; top:10px; right:10px; z-index:4; background:rgba(0,0,0,0.55); color:#fff; border:none; padding:6px 10px; font-size:12px; border-radius:22px; cursor:pointer; display:flex; align-items:center; gap:4px; backdrop-filter:blur(4px); }
+  .cam-btn:hover { background:rgba(0,0,0,0.7); }
     video, .video-shell canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
     video { border:4px solid var(--accent); border-radius:16px; box-shadow:0 6px 22px -4px rgba(0,0,0,.35); background:#000; }
     #overlay { pointer-events:none; }
@@ -47,12 +49,13 @@
   </style>
 </head>
 <body>
-  <h1>🍍 ตรวจคุณภาพสับปะรด 🍍</h1>
+  <h1>🍍 ตรวจคุณภาพสับปะรด (Frontend Static) 🍍</h1>
   <div class="dashboard">
     <div class="two-col">
       <div class="col-left">
         <div class="video-shell">
           <video id="user_cam" autoplay playsinline muted></video>
+          <button id="switch_cam_btn" class="cam-btn" title="สลับกล้อง">สลับกล้อง</button>
           <canvas id="overlay"></canvas>
         </div>
         <div id="status" class="status-bar">Initializing camera...</div>
@@ -62,10 +65,12 @@
         <div id="details_result" class="table-scroll"></div>
       </div>
     </div>
+    <div class="footer-note">Set window.API_BASE ในไฟล์นี้ให้ตรง backend ก่อนใช้งาน</div>
   </div>
   <script src="app.js"></script>
 </body>
 </html>
+
 
 
 
