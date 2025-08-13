@@ -1,6 +1,7 @@
 const overviewDiv = document.getElementById('overview_result');
 const detailsDiv = document.getElementById('details_result');
 const userCam = document.getElementById('user_cam');
+const overlay = document.getElementById('overlay');
 const statusEl = document.getElementById('status');
 
 function renderSummary(data){
@@ -98,6 +99,30 @@ if(userCam){
         if(res.ok){
           const json = await res.json();
           renderSummary(json);
+          // draw boxes if overlay present
+          if(overlay && userCam.videoWidth){
+            overlay.width = userCam.videoWidth;
+            overlay.height = userCam.videoHeight;
+            const octx = overlay.getContext('2d');
+            octx.clearRect(0,0,overlay.width,overlay.height);
+            const boxes = json.raw || [];
+            boxes.forEach(b=>{
+              const [x1,y1,x2,y2] = b.box;
+              const w = x2 - x1; const h = y2 - y1;
+              octx.strokeStyle = '#ffb300';
+              octx.lineWidth = 2;
+              octx.strokeRect(x1,y1,w,h);
+              const label = `${b.class} ${b.confidence}`;
+              octx.fillStyle = 'rgba(255,179,0,0.85)';
+              const pad = 4;
+              octx.font = '14px sans-serif';
+              const tw = octx.measureText(label).width;
+              const th = 16;
+              octx.fillRect(x1, Math.max(0,y1-th-4), tw+pad*2, th+4);
+              octx.fillStyle = '#000';
+              octx.fillText(label, x1+pad, Math.max(10,y1-6));
+            });
+          }
           if(statusEl) statusEl.textContent = 'Updated '+new Date().toLocaleTimeString();
           sendFrame._delay = 1200; // normal cadence
         } else {
