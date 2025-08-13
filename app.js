@@ -32,6 +32,7 @@ function renderSummary(data){
   overviewDiv.innerHTML = ovHtml;
 
   if(data.details && data.details.length){
+    let dt = ``;
     dt += `<table border="1" style="margin:auto; border-collapse:collapse;">
       <tr><th>#</th><th>ID</th><th>Grade</th><th>Ripeness</th><th>Conf</th><th>Defects</th><th>ตำแหน่ง (box)</th></tr>`;
     data.details.forEach((d,i)=>{
@@ -158,5 +159,6 @@ if(userCam){
   setInterval(pollLatest,1500);
   pollLatest();
 }
+
 
 
