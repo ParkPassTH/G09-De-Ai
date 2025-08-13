@@ -32,7 +32,7 @@ function renderSummary(data){
   overviewDiv.innerHTML = ovHtml;
 
   if(data.details && data.details.length){
-    `<table border="1" style="margin:auto; border-collapse:collapse;">
+    dt += `<table border="1" style="margin:auto; border-collapse:collapse;">
       <tr><th>#</th><th>ID</th><th>Grade</th><th>Ripeness</th><th>Conf</th><th>Defects</th><th>ตำแหน่ง (box)</th></tr>`;
     data.details.forEach((d,i)=>{
       const defects = d.defects && d.defects.length ? d.defects.map(df=>`${df.name} (${df.confidence})`).join('<br>') : '-';
@@ -158,4 +158,5 @@ if(userCam){
   setInterval(pollLatest,1500);
   pollLatest();
 }
+
 
