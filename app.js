@@ -3,6 +3,9 @@ const detailsDiv = document.getElementById('details_result');
 const userCam = document.getElementById('user_cam');
 const overlay = document.getElementById('overlay');
 const statusEl = document.getElementById('status');
+const switchBtn = document.getElementById('switch_cam_btn');
+let currentFacing = 'environment'; // default try back camera
+let currentStream;
 
 function renderSummary(data){
   if(!data || !data.overview){ overviewDiv.innerHTML=''; detailsDiv.innerHTML=''; return; }
@@ -32,7 +35,7 @@ function renderSummary(data){
   overviewDiv.innerHTML = ovHtml;
 
   if(data.details && data.details.length){
-    let dt = ``;
+    let dt = `<h2>รายละเอียดรายลูก</h2>`;
     dt += `<table border="1" style="margin:auto; border-collapse:collapse;">
       <tr><th>#</th><th>ID</th><th>Grade</th><th>Ripeness</th><th>Conf</th><th>Defects</th><th>ตำแหน่ง (box)</th></tr>`;
     data.details.forEach((d,i)=>{
@@ -69,14 +72,49 @@ function pollLatest(){
 }
 if(userCam){
   // Deploy mode: capture user webcam and send frames to /predict
-  async function initCam(){
+  async function stopStream(){
+    if(currentStream){
+      currentStream.getTracks().forEach(t=>t.stop());
+      currentStream = null;
+    }
+  }
+  async function initCam(facing=currentFacing){
     try{
-      const stream = await navigator.mediaDevices.getUserMedia({video:true});
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        throw new Error('mediaDevices not supported');
+      }
+      // Prefer exact facingMode if supported
+      const constraintsPrimary = { video: { facingMode: { ideal: facing } } };
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraintsPrimary);
+      } catch(err){
+        // Fallback: list devices and choose manually
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const vids = devices.filter(d=>d.kind==='videoinput');
+        let target = vids.find(d=> facing==='environment' ? /back|rear|environment/i.test(d.label) : /front|user|face/i.test(d.label));
+        if(!target && vids.length){ target = vids[0]; }
+        if(!target) throw err;
+        stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: target.deviceId } } });
+      }
+      await stopStream();
+      currentStream = stream;
       userCam.srcObject = stream;
-      if(statusEl) statusEl.textContent = 'Camera ready';
+      currentFacing = facing;
+      if(statusEl) statusEl.textContent = 'Camera '+(facing==='environment'?'(back)':'(front)')+' ready';
     }catch(e){
       if(statusEl) statusEl.textContent = 'Camera error: '+e.message;
+      // Try fallback front if back failed
+      if(facing==='environment'){
+        try{ await initCam('user'); }catch(_){}
+      }
     }
+  }
+  if(switchBtn){
+    switchBtn.addEventListener('click', ()=>{
+      const next = currentFacing==='environment' ? 'user' : 'environment';
+      initCam(next);
+    });
   }
   async function sendFrame(){
     if(userCam.readyState >= 2){
@@ -159,6 +197,3 @@ if(userCam){
   setInterval(pollLatest,1500);
   pollLatest();
 }
-
-
-
