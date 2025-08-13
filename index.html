@@ -10,52 +10,59 @@
     window.API_BASE = 'https://da5caabcecf3.ngrok-free.app'
   </script>
   <style>
-    body { font-family: 'Prompt', system-ui, Arial, sans-serif; text-align:center; background:#fffde7; margin:0; }
-    h1 { margin:20px 0 10px; }
-    video { width:640px; max-width:95%; border:4px solid #ffb300; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.25); }
-  .panel { background:#ffffff; border:1px solid #ffe082; border-radius:14px; padding:24px 28px 30px; width:clamp(320px,90%,900px); margin:32px auto 0; text-align:left; box-shadow:0 8px 24px -6px rgba(255,171,64,0.35); position:relative; }
-    .panel:before { content:""; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,235,59,0.18),rgba(255,171,64,0.12)); pointer-events:none; }
-    table { width:100%; border-collapse:collapse; font-size:14px; background:#fff; border:1px solid #ffe082; box-shadow:0 4px 12px -4px rgba(0,0,0,.15); }
-    th,td { padding:8px 10px; border:1px solid #ffe082; }
-    th { background:#ffecb3; }
-    .stat-grid { display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); margin-top:18px; }
-    .stat-box { background:#fff8e1; border:1px solid #ffecb3; border-radius:12px; padding:14px 12px; }
-    .stat-box .label { font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:#ff9100; font-weight:600; }
-    .stat-box .value { font-size:26px; font-weight:700; color:#4e342e; line-height:1.1; margin-top:6px; }
-    .group-heading { margin:34px 0 10px; font-size:18px; color:#6d4c41; }
+    :root { --accent:#ffb300; --panel-w:560px; }
+    body { font-family:'Prompt',system-ui,Arial,sans-serif; background:#fffde7; margin:0; color:#4e342e; }
+    h1 { margin:18px 0 4px; text-align:center; font-weight:600; }
+    .dashboard { max-width:1260px; margin:0 auto 30px; padding:0 22px 10px; }
+    .two-col { display:flex; align-items:stretch; justify-content:center; gap:34px; }
+    .col-left, .col-right { display:flex; flex-direction:column; align-items:stretch; }
+    .col-left { flex:0 0 auto; }
+    .video-shell { position:relative; width:640px; max-width:100%; aspect-ratio:4/3; }
+    video, .video-shell canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    video { border:4px solid var(--accent); border-radius:16px; box-shadow:0 6px 22px -4px rgba(0,0,0,.35); background:#000; }
+    #overlay { pointer-events:none; }
+    .status-bar { font-size:12px; margin-top:8px; text-align:center; color:#5d4037; }
+    .panel { background:#ffffff; border:1px solid #ffe082; border-radius:16px; padding:22px 26px 26px; box-shadow:0 10px 28px -8px rgba(255,171,64,0.45); position:relative; width:var(--panel-w); max-width:100%; margin:0 0 24px; }
+    .panel:before { content:""; position:absolute; inset:0; background:linear-gradient(145deg,rgba(255,235,59,0.20),rgba(255,171,64,0.10)); border-radius:inherit; pointer-events:none; }
+    .panel h2 { margin:0 0 14px; font-size:22px; }
+    .stat-grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); }
+    .stat-box { background:#fff8e1; border:1px solid #ffecb3; border-radius:14px; padding:12px 10px 14px; position:relative; }
+    .stat-box .label { font-size:11px; font-weight:600; letter-spacing:.6px; color:#ff9100; text-transform:uppercase; }
+    .stat-box .value { font-size:24px; font-weight:700; margin-top:4px; }
+    .divider { height:1px; background:linear-gradient(to right,rgba(255,171,64,0),#ffcc80,rgba(255,171,64,0)); border:none; margin:20px -4px 6px; }
     .tag-list { display:flex; flex-wrap:wrap; gap:10px; }
-    .tag { background:#ffe0b2; border:1px solid #ffcc80; padding:6px 10px 6px 12px; border-radius:999px; font-size:14px; font-weight:600; color:#5d4037; }
-    .tag .count { background:#ffab40; color:#fff; font-size:12px; padding:2px 8px; border-radius:10px; margin-left:8px; }
-    .footer-note { margin:60px 0 40px; font-size:12px; color:#8d6e63; }
-  .main-row { display:flex; justify-content:center; align-items:flex-start; gap:28px; flex-wrap:wrap; margin-top:20px; }
-  .cam-wrap { position:relative; display:inline-block; }
-  .side-overview { width:430px; max-width:95%; display:flex; flex-direction:column; gap:22px; }
-  #overview_result.panel, #details_result.panel { margin:0; width:100%; }
-  .table-scroll { max-height:420px; overflow:auto; border-radius:10px; }
-  .table-scroll table { min-width:520px; }
-  .stat-grid { --min-col:140px; }
-  @media (max-width:1200px){ .side-overview{width:48%;} }
-  @media (max-width:960px){ .side-overview{width:100%; order:2;} .cam-wrap{order:1;} }
-  @media (max-width:820px){ .stat-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));} h1{font-size:1.55rem;} .panel{padding:20px 22px 24px;} }
-  @media (max-width:640px){ video{ width:100%; } .main-row{flex-direction:column; align-items:center;} .side-overview{width:100%;} .stat-box .value{font-size:22px;} .stat-box .label{font-size:11px;} table{font-size:13px;} }
-  @media (max-width:420px){ .panel{padding:18px 18px 22px;} h1{font-size:1.35rem;} .stat-box .value{font-size:20px;} }
+    .tag { background:#ffe0b2; border:1px solid #ffcc80; border-radius:28px; padding:6px 12px 6px 14px; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; }
+    .tag .count { background:#ffab40; color:#fff; font-size:11px; padding:2px 8px; border-radius:12px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th,td { padding:7px 9px; border:1px solid #ffe082; }
+    th { background:#ffecb3; position:sticky; top:0; z-index:2; font-size:12px; }
+    .table-scroll { max-height:420px; overflow:auto; border:1px solid #ffe082; border-radius:14px; background:#fff; box-shadow:0 6px 16px -6px rgba(0,0,0,0.18); }
+    .table-scroll table { min-width:520px; }
+    .footer-note { text-align:center; font-size:12px; margin:46px 0 30px; color:#8d6e63; }
+    /* Mobile / Tablet */
+    @media (max-width:1180px){ :root{ --panel-w:520px; } .two-col{gap:26px;} }
+    @media (max-width:1040px){ .two-col{flex-direction:column; align-items:center;} .col-left, .col-right{width:100%;} .panel{width:100%;} .video-shell{width:100%; max-width:640px;} }
+    @media (max-width:640px){ :root{ --panel-w:100%; } h1{font-size:1.55rem;} .panel{padding:18px 18px 22px;} .stat-box .value{font-size:20px;} .stat-box .label{font-size:10px;} table{font-size:12px;} th{font-size:11px;} }
+    @media (max-width:400px){ h1{font-size:1.35rem;} .tag{font-size:12px;} }
   </style>
 </head>
 <body>
   <h1>🍍 ตรวจคุณภาพสับปะรด (Frontend Static) 🍍</h1>
-  <div class="main-row">
-    <div class="cam-wrap">
-      <video id="user_cam" autoplay playsinline muted style="border:4px solid #ffb300;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.25);"></video>
-      <canvas id="overlay" style="position:absolute;left:0;top:0;pointer-events:none;"></canvas>
-      <div id="status" style="margin-top:6px;font-size:12px;color:#5d4037;">Initializing camera...</div>
-    </div>
-    <div class="side-overview">
-      <div id="overview_result" class="panel"></div>
-      <div id="details_result" class="panel table-scroll"></div>
+  <div class="dashboard">
+    <div class="two-col">
+      <div class="col-left">
+        <div class="video-shell">
+          <video id="user_cam" autoplay playsinline muted></video>
+          <canvas id="overlay"></canvas>
+        </div>
+        <div id="status" class="status-bar">Initializing camera...</div>
+      </div>
+      <div class="col-right">
+        <div id="overview_result" class="panel"></div>
+        <div id="details_result" class="table-scroll"></div>
+      </div>
     </div>
   </div>
-  <!-- details panel moved inside side-overview for desktop; kept here only as fallback JS hook -->
-  <div class="footer-note">Set window.API_BASE ในไฟล์นี้ให้ตรง backend ก่อนใช้งาน</div>
   <script src="app.js"></script>
 </body>
 </html>
