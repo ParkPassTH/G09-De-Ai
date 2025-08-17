@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, Response, jsonify, request
+from flask import Flask, render_template, Response, jsonify, request, send_from_directory
 try:
     from flask_cors import CORS
 except ImportError:  # fallback if package missing
@@ -91,7 +91,7 @@ try:
 except Exception:
     pass
 # ตรวจสอบว่าไฟล์โมเดลมีอยู่จริง
-model_path = 'best.pt'
+model_path = 'bestM50.pt'
 if not os.path.exists(model_path):
     print(f"Error: Model file not found at {model_path}")
     exit()
@@ -456,6 +456,20 @@ else:
 @app.route('/health', methods=['GET'])
 def global_health():
     return jsonify({'status': 'ok', 'deploy': IS_DEPLOY})
+
+# Serve favicon to avoid 405/404 when browsers request /favicon.ico
+@app.route('/favicon.ico')
+def favicon():
+    try:
+        # Use existing image as favicon; replace with an .ico if you add one later
+        return send_from_directory(
+            os.path.join(app.root_path, 'static'),
+            'pineapple-cartoon-character-free-vector.jpg',
+            mimetype='image/jpeg'
+        )
+    except Exception:
+        # No favicon available; return 204 No Content
+        return ('', 204)
 
 """Additional image prediction & debug routes (must be defined before app.run)."""
 import base64
