@@ -3,9 +3,13 @@ const detailsDiv = document.getElementById('details_result');
 const userCam = document.getElementById('user_cam');
 const overlay = document.getElementById('overlay');
 const statusEl = document.getElementById('status');
-const switchBtn = document.getElementById('switch_cam_btn');
-let currentFacing = 'environment'; // default try back camera
-let currentStream;
+// Tunables (can override in index.html):
+// window.UPDATE_MS = 500  // update cadence in ms (default 800)
+// window.TARGET_MAX = 480 // max frame side sent to backend (default 480)
+// window.JPEG_Q = 0.45    // JPEG quality 0..1 (default 0.45)
+const UPDATE_MS = Math.max(200, Number(window.UPDATE_MS) || 500);
+const TARGET_MAX = Math.max(160, Number(window.TARGET_MAX) || 480);
+const JPEG_Q = Math.min(0.95, Math.max(0.2, Number(window.JPEG_Q) || 0.5));
 
 function renderSummary(data){
   if(!data || !data.overview){ overviewDiv.innerHTML=''; detailsDiv.innerHTML=''; return; }
@@ -39,7 +43,12 @@ function renderSummary(data){
     dt += `<table border="1" style="margin:auto; border-collapse:collapse;">
       <tr><th>#</th><th>ID</th><th>Grade</th><th>Ripeness</th><th>Conf</th><th>Defects</th><th>ตำแหน่ง (box)</th></tr>`;
     data.details.forEach((d,i)=>{
-      const defects = d.defects && d.defects.length ? d.defects.map(df=>`${df.name} (${df.confidence})`).join('<br>') : '-';
+      // Group same defect names and show instance count instead of confidence
+      let defects = '-';
+      if(d.defects && d.defects.length){
+        const counts = d.defects.reduce((acc, df)=>{ acc[df.name] = (acc[df.name]||0) + 1; return acc; }, {});
+        defects = Object.entries(counts).map(([name,count])=>`${name} (${count})`).join('<br>');
+      }
       dt += `<tr>
         <td>${i+1}</td>
         <td>${d.id ?? '-'}</td>
@@ -72,49 +81,14 @@ function pollLatest(){
 }
 if(userCam){
   // Deploy mode: capture user webcam and send frames to /predict
-  async function stopStream(){
-    if(currentStream){
-      currentStream.getTracks().forEach(t=>t.stop());
-      currentStream = null;
-    }
-  }
-  async function initCam(facing=currentFacing){
+  async function initCam(){
     try{
-      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-        throw new Error('mediaDevices not supported');
-      }
-      // Prefer exact facingMode if supported
-      const constraintsPrimary = { video: { facingMode: { ideal: facing } } };
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia(constraintsPrimary);
-      } catch(err){
-        // Fallback: list devices and choose manually
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const vids = devices.filter(d=>d.kind==='videoinput');
-        let target = vids.find(d=> facing==='environment' ? /back|rear|environment/i.test(d.label) : /front|user|face/i.test(d.label));
-        if(!target && vids.length){ target = vids[0]; }
-        if(!target) throw err;
-        stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: target.deviceId } } });
-      }
-      await stopStream();
-      currentStream = stream;
+      const stream = await navigator.mediaDevices.getUserMedia({video:true});
       userCam.srcObject = stream;
-      currentFacing = facing;
-      if(statusEl) statusEl.textContent = 'Camera '+(facing==='environment'?'(back)':'(front)')+' ready';
+      if(statusEl) statusEl.textContent = 'Camera ready';
     }catch(e){
       if(statusEl) statusEl.textContent = 'Camera error: '+e.message;
-      // Try fallback front if back failed
-      if(facing==='environment'){
-        try{ await initCam('user'); }catch(_){}
-      }
     }
-  }
-  if(switchBtn){
-    switchBtn.addEventListener('click', ()=>{
-      const next = currentFacing==='environment' ? 'user' : 'environment';
-      initCam(next);
-    });
   }
   async function sendFrame(){
     if(userCam.readyState >= 2){
@@ -122,8 +96,8 @@ if(userCam){
       canvas.width = userCam.videoWidth;
       canvas.height = userCam.videoHeight;
       const ctx = canvas.getContext('2d');
-      // downscale if very large to reduce upload size
-      const targetMax = 640;
+  // downscale if very large to reduce upload size
+  const targetMax = TARGET_MAX;
       let dw = userCam.videoWidth, dh = userCam.videoHeight;
       if(Math.max(dw,dh) > targetMax){
         const sc = targetMax / Math.max(dw,dh);
@@ -131,7 +105,7 @@ if(userCam){
         canvas.height = Math.round(dh*sc);
       }
       ctx.drawImage(userCam,0,0,canvas.width,canvas.height);
-      const dataURL = canvas.toDataURL('image/jpeg',0.5); // lower quality for bandwidth
+  const dataURL = canvas.toDataURL('image/jpeg', JPEG_Q); // lower quality for bandwidth
       try{
   const res = await fetch(apiUrl('/predict'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataURL})});
         if(res.ok){
@@ -173,27 +147,27 @@ if(userCam){
             });
           }
           if(statusEl) statusEl.textContent = 'Updated '+new Date().toLocaleTimeString();
-          sendFrame._delay = 1200; // normal cadence
+          sendFrame._delay = UPDATE_MS; // normal cadence
         } else {
           if(res.status === 429){
             if(statusEl) statusEl.textContent = 'Server busy, backing off';
-            sendFrame._delay = 2000; // backoff
+            sendFrame._delay = Math.max(UPDATE_MS * 2, 2000); // backoff
           } else {
             if(statusEl) statusEl.textContent = 'Predict error '+res.status;
-            sendFrame._delay = 1500;
+            sendFrame._delay = Math.max(UPDATE_MS * 1.5, 1200);
           }
         }
       }catch(e){
         if(statusEl) statusEl.textContent = 'Network error '+e.message;
-        sendFrame._delay = Math.min(4000, (sendFrame._delay||1500)*1.5);
+        sendFrame._delay = Math.min(4000, (sendFrame._delay||UPDATE_MS)*1.5);
       }
     }
-    setTimeout(sendFrame, sendFrame._delay || 1200);
+    setTimeout(sendFrame, sendFrame._delay || UPDATE_MS);
   }
   initCam();
   sendFrame();
 } else {
   // Local dev: poll summary
-  setInterval(pollLatest,1500);
+  setInterval(pollLatest, Math.min(UPDATE_MS, 1000));
   pollLatest();
 }
