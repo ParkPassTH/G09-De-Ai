@@ -4,10 +4,12 @@
   <meta charset="UTF-8" />
   <title>Pineapple Quality</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='pineapple-cartoon-character-free-vector.jpg') }}" />
   <!-- ตั้งค่า API_BASE ให้ชี้ไปยัง backend (เช่น ngrok) -->
   <script>
     // ใส่ URL backend ของคุณตรงนี้ เช่น: https://xxxx.ngrok-free.app
-    window.API_BASE = 'https://f79afa92b798.ngrok-free.app'
+    // window.API_BASE = 'https://e57edbbae351.ngrok-free.app'
+    window.API_BASE = "https://f79afa92b798.ngrok-free.app";
   </script>
   <style>
     :root { --accent:#ffb300; --panel-w:560px; }
@@ -66,12 +68,9 @@
       </div>
     </div>
   </div>
-  <script src="app.js"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
-
-
-
 
 
 
