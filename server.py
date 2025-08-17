@@ -330,17 +330,17 @@ def build_frame_summary(detections, class_names):
                     best_idx = idx; best_metric = 1.0/(distance+1e-6)
         if best_idx is not None:
             g = fruits[best_idx]
-            if d['normalized'] not in g['defect_names']:
-                g['defects'].append({'name': d['normalized'], 'confidence': d['conf']})
-                g['defect_names'].append(d['normalized'])
+            # Count every defect instance (box) for grading; allow duplicates
+            g['defects'].append({'name': d['normalized'], 'confidence': d['conf']})
+            g['defect_names'].append(d['normalized'])
 
-    # --- Rule-based grading by defect count ---
-    # Grade A: 0 defects, Grade B: 1-2 defects, Grade C: >2 defects
+    # --- Rule-based grading by defect instance count ---
+    # Grade A: 0 defects, Grade B: 1-3 defects, Grade C: >=4 defects
     for g in fruits:
-        defect_count = len(g['defect_names'])
+        defect_count = len(g['defects'])
         if defect_count == 0:
             g['grade'] = 'Grade A'
-        elif defect_count <= 2:
+        elif defect_count <= 3:
             g['grade'] = 'Grade B'
         else:
             g['grade'] = 'Grade C'
